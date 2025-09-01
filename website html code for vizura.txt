@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Minds — Student Learning Hub</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; background:#f9fafb; color:#222; overflow-x:hidden; }
+
+    /* ENTRY PAGE */
+    #entryPage {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: linear-gradient(135deg,#89f7fe,#66a6ff);
+      display:flex; align-items:center; justify-content:center;
+      z-index:3000; transition: opacity 1s ease;
+    }
+    .entry-card {
+      background: rgba(255,255,255,0.95);
+      padding: 30px; border-radius: 20px; text-align: center; width: 350px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    video, canvas { width:100%; max-width:280px; border-radius:12px; margin-bottom:10px; }
+    .entry-card input {
+      width:90%; padding:12px; margin-bottom:15px;
+      border-radius:10px; border:1px solid #ccc; text-align:center;
+    }
+    .entry-card button {
+      background: linear-gradient(135deg,#4f46e5,#9333ea);
+      color:#fff; border:none; padding:12px 20px; border-radius:10px;
+      font-weight:bold; cursor:pointer; margin:5px; transition: transform 0.2s;
+    }
+    .entry-card button:hover { transform:scale(1.05); }
+
+    /* WELCOME SCREEN */
+    #welcomeScreen {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background: radial-gradient(circle, #1e3c72, #2a5298);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      z-index:2500; color:#fff; text-align:center; overflow:hidden;
+      opacity:0; visibility:hidden; transition:opacity 1s ease;
+    }
+    #welcomeScreen.active { opacity:1; visibility:visible; }
+    #welcomeScreen h1 {
+      font-size:50px; margin:20px 0; animation: glow 1.5s infinite alternate;
+    }
+    #welcomeScreen h2 {
+      font-size:28px; margin-bottom:20px; animation: fadeIn 3s ease;
+    }
+    #studentPhotoBig {
+      width:120px; height:120px; border-radius:50%; border:4px solid #fff; margin:20px;
+    }
+    @keyframes glow {
+      from { text-shadow:0 0 10px #ff0, 0 0 20px #ff0, 0 0 30px #f80; }
+      to   { text-shadow:0 0 20px #fff, 0 0 30px #ff0, 0 0 40px #f80; }
+    }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+    /* Floating books */
+    .book {
+      position:absolute; width:60px; animation: floatBook 8s linear infinite;
+    }
+    @keyframes floatBook {
+      from { transform: translateY(100vh) rotate(0deg); opacity:1; }
+      to   { transform: translateY(-150px) rotate(360deg); opacity:0; }
+    }
+
+    /* Stars */
+    .star {
+      position:absolute; width:15px; height:15px; background:yellow;
+      border-radius:50%; box-shadow:0 0 10px yellow;
+      animation: twinkle 2s infinite alternate;
+    }
+    @keyframes twinkle {
+      from { opacity:0.2; transform:scale(0.5); }
+      to   { opacity:1; transform:scale(1.2); }
+    }
+
+    /* Lightning/strikes */
+    .lightning {
+      position:absolute; width:4px; height:100%; background:#fff;
+      animation: lightningFlash 2s infinite;
+    }
+    .lightning:nth-child(1) { left:20%; animation-delay:0.3s; }
+    .lightning:nth-child(2) { left:50%; animation-delay:0.6s; }
+    .lightning:nth-child(3) { left:80%; animation-delay:0.9s; }
+    @keyframes lightningFlash {
+      0%,90%,100% { opacity:0; }
+      40% { opacity:1; transform:scaleY(1.5); background:yellow; }
+    }
+
+    /* Confetti */
+    .confetti {
+      position:absolute; width:10px; height:10px; background:red;
+      top:0; animation: fall 3s linear infinite;
+    }
+    @keyframes fall {
+      from { transform: translateY(-10px) rotate(0deg); }
+      to   { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    /* MAIN SITE */
+    header { background:#4f46e5; color:#fff; padding:16px; text-align:center; }
+    nav { display:flex; justify-content:center; gap:10px; background:#eef; padding:10px; }
+    nav button { border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+    nav button.active { background:#4f46e5; color:#fff; }
+    main { max-width:900px; margin:20px auto; padding:0 16px; }
+    section { display:none; }
+    section.active { display:block; animation:fade .3s ease; }
+    @keyframes fade { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:none;} }
+    .card { background:#fff; padding:16px; border-radius:12px; margin-bottom:16px; box-shadow:0 4px 8px rgba(0,0,0,.08); }
+    .quiz-q { font-weight:bold; }
+    .choices button { display:block; width:100%; margin:6px 0; padding:10px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
+    .choices button.correct { background:#d1fae5; border-color:#10b981; }
+    .choices button.wrong { background:#fee2e2; border-color:#ef4444; }
+    #studentPhoto { width:60px; height:60px; border-radius:50%; object-fit:cover; margin-top:8px; }
+  </style>
+</head>
+<body>
+
+  <!-- ENTRY PAGE -->
+  <div id="entryPage">
+    <div class="entry-card">
+      <video id="camera" autoplay playsinline></video>
+      <canvas id="snapshot" style="display:none;"></canvas>
+      <input type="text" id="studentName" placeholder="Enter your name">
+      <div>
+        <button onclick="capturePhoto()">📸 Capture</button>
+        <button onclick="startSite()">🚀 Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WELCOME SCREEN -->
+  <div id="welcomeScreen">
+    <h1>🎉 Congratulations 🎉</h1>
+    <img id="studentPhotoBig" src="" alt="Student Photo">
+    <h2 id="studentWelcome">Welcome Genius!</h2>
+    <p id="quote"></p>
+    <!-- Lightning -->
+    <div class="lightning"></div>
+    <div class="lightning"></div>
+    <div class="lightning"></div>
+  </div>
+
+  <!-- MAIN SITE -->
+  <header>
+    <h1>Smart Minds</h1>
+    <p id="welcomeText">Aptitude • General Knowledge • Current Affairs</p>
+    <img id="studentPhoto" style="display:none;" alt="Student Photo">
+  </header>
+  <nav>
+    <button class="tab active" data-target="home">Home</button>
+    <button class="tab" data-target="aptitude">Aptitude</button>
+    <button class="tab" data-target="gk">General Knowledge</button>
+    <button class="tab" data-target="ca">Current Affairs</button>
+  </nav>
+  <main>
+    <section id="home" class="active">
+      <div class="card">
+        <h2>👋 Welcome Student!</h2>
+        <p>This is your learning hub. Explore Aptitude, GK and Current Affairs quizzes.</p>
+      </div>
+    </section>
+
+    <section id="aptitude">
+      <div class="card"><h2>Aptitude Quiz 🧮</h2><p class="quiz-q" id="aptQ">Press Start to begin.</p><div class="choices" id="aptChoices"></div><button id="aptStart">Start Aptitude Quiz</button><p id="aptScore"></p></div>
+    </section>
+
+    <section id="gk">
+      <div class="card"><h2>General Knowledge 📚</h2><p id="fact">Click below to see a random fact.</p><button id="newFact">New Fact</button></div>
+      <div class="card"><h2>GK Quiz</h2><p class="quiz-q" id="gkQ">Press Start to begin.</p><div class="choices" id="gkChoices"></div><button id="gkStart">Start GK Quiz</button><p id="gkScore"></p></div>
+    </section>
+
+    <section id="ca">
+      <div class="card"><h2>Current Affairs 🌍</h2><ul><li>India successfully launched a new weather satellite. 🚀</li><li>UN summit on climate change held in New York. 🌱</li><li>New AI technology making headlines worldwide. 🤖</li></ul></div>
+      <div class="card"><h2>Current Affairs Quiz</h2><p class="quiz-q" id="caQ">Press Start to begin.</p><div class="choices" id="caChoices"></div><button id="caStart">Start CA Quiz</button><p id="caScore"></p></div>
+    </section>
+  </main>
+
+  <script>
+    // Camera access
+    const video=document.getElementById("camera");
+    const canvas=document.getElementById("snapshot");
+    const context=canvas.getContext("2d");
+    let capturedImage=null, streamRef=null;
+
+    navigator.mediaDevices.getUserMedia({ video:true })
+      .then(stream => { video.srcObject=stream; streamRef=stream; })
+      .catch(err => { alert("Camera access denied: " + err); });
+
+    function capturePhoto() {
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      context.drawImage(video,0,0,canvas.width,canvas.height);
+      capturedImage=canvas.toDataURL("image/png");
+      alert("Photo captured! Now click Enter to continue.");
+    }
+
+    // Tabs
+    const tabs=document.querySelectorAll('.tab');
+    const secs=document.querySelectorAll('main section');
+    tabs.forEach(btn=>btn.addEventListener('click',()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      secs.forEach(s=>s.classList.remove('active'));
+      document.getElementById(btn.dataset.target).classList.add('active');
+    }));
+
+    function startSite() {
+      const name=document.getElementById("studentName").value.trim();
+      if(!name) { alert("Please enter your name!"); return; }
+      if(!capturedImage) { alert("Please capture your photo first!"); return; }
+
+      if(streamRef) { streamRef.getTracks().forEach(track=>track.stop()); }
+
+      document.getElementById("welcomeText").textContent="Welcome, " + name + " 👋";
+      const photoEl=document.getElementById("studentPhoto");
+      photoEl.src=capturedImage; photoEl.style.display="inline-block";
+
+      document.getElementById("entryPage").style.display="none";
+
+      // Welcome screen
+      document.getElementById("studentWelcome").textContent="Welcome, " + name + "!";
+      document.getElementById("studentPhotoBig").src=capturedImage;
+      const welcome=document.getElementById("welcomeScreen");
+      welcome.classList.add("active");
+
+      // Add floating books + stars + confetti dynamically
+      for(let i=0;i<12;i++){
+        const book=document.createElement("img");
+        book.src="https://cdn-icons-png.flaticon.com/512/29/29302.png";
+        book.className="book";
+        book.style.left=Math.random()*100+"%";
+        book.style.animationDuration=(6+Math.random()*4)+"s";
+        welcome.appendChild(book);
+      }
+      for(let i=0;i<20;i++){
+        const star=document.createElement("div");
+        star.className="star";
+        star.style.left=Math.random()*100+"%";
+        star.style.top=Math.random()*100+"%";
+        welcome.appendChild(star);
+      }
+      for(let i=0;i<30;i++){
+        const c=document.createElement("div");
+        c.className="confetti";
+        c.style.left=Math.random()*100+"%";
+        c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+        c.style.animationDuration=(2+Math.random()*3)+"s";
+        welcome.appendChild(c);
+      }
+
+      // Motivational quote
+      const quotes=[
+        "Knowledge is your superpower! 💡",
+        "Every genius was once a beginner. 🚀",
+        "Books are a treasure chest of wisdom. 📚",
+        "Believe in yourself, little genius! 🌟"
+      ];
+      document.getElementById("quote").textContent=quotes[Math.floor(Math.random()*quotes.length)];
+
+      // Hide after 5s
+      setTimeout(()=>{ welcome.classList.remove("active"); }, 5000);
+    }
+
+    // Quiz Engine
+    function makeQuiz(startBtn,qEl,choicesEl,scoreEl,questions){
+      let i=0,score=0;
+      startBtn.onclick=()=>{i=0;score=0;scoreEl.textContent='';next();};
+      function next(){
+        if(i>=questions.length){scoreEl.textContent=`Final Score: ${score}/${questions.length}`;qEl.textContent='Quiz finished!';choicesEl.innerHTML='';return;}
+        const q=questions[i];
+        qEl.textContent=q.q;choicesEl.innerHTML='';
+        q.c.forEach((c,idx)=>{
+          const b=document.createElement('button');b.textContent=c;
+          b.onclick=()=>{
+            if(idx===q.a){b.classList.add('correct');score++;}
+            else b.classList.add('wrong');
+            i++;setTimeout(next,600);
+          };
+          choicesEl.appendChild(b);
+        });
+      }
+    }
+
+    // Aptitude questions
+    makeQuiz(
+      document.getElementById('aptStart'),
+      document.getElementById('aptQ'),
+      document.getElementById('aptChoices'),
+      document.getElementById('aptScore'),
+      [
+        {q:'If 3 pens cost 30, how much for 7 pens?',c:['60','70','90','100'],a:1},
+        {q:'What comes next: 2,4,8,16,...?',c:['18','20','32','24'],a:2},
+        {q:'The average of 10 and 30 is?',c:['15','20','25','30'],a:1},
+      ]
+    );
+
+    // GK Quiz
+    makeQuiz(
+      document.getElementById('gkStart'),
+      document.getElementById('gkQ'),
+      document.getElementById('gkChoices'),
+      document.getElementById('gkScore'),
+      [
+        {q:'Which is the largest planet?',c:['Earth','Mars','Jupiter','Saturn'],a:2},
+        {q:'National animal of India?',c:['Lion','Tiger','Elephant','Horse'],a:1},
+        {q:'Fastest land animal?',c:['Cheetah','Horse','Leopard','Tiger'],a:0},
+      ]
+    );
+
+    // CA Quiz
+    makeQuiz(
+      document.getElementById('caStart'),
+      document.getElementById('caQ'),
+      document.getElementById('caChoices'),
+      document.getElementById('caScore'),
+      [
+        {q:'Where was the latest UN climate summit held?',c:['London','New York','Paris','Tokyo'],a:1},
+        {q:'Which country launched a new weather satellite?',c:['India','China','USA','Japan'],a:0},
+        {q:'AI is making headlines in which field?',c:['Medicine','Technology','Sports','Fashion'],a:1},
+      ]
+    );
+
+    // GK facts
+    const facts=[
+      'The longest river in the world is the Nile.','The Great Wall of China is visible from space (myth!).','Sharks existed before trees.','Mount Everest is the tallest mountain on Earth.'
+    ];
+    document.getElementById('newFact').onclick=()=>{
+      document.getElementById('fact').textContent=facts[Math.floor(Math.random()*facts.length)];
+    };
+  </script>
+</body>
+</html>
